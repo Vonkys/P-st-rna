@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GrowNote</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 16px;
+      background: #f0f8ff;
+    }
+    h1 {
+      font-family: 'Great Vibes', cursive;
+      font-size: 2.8rem;
+      color: #2a7a2a;
+      margin-bottom: 10px;
+    }
+    .symbol { font-size: 3rem; color: #4caf50; margin-bottom: 4px; }
+    button {
+      font-size: 0.9rem;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: white;
+      margin: 0;
+    }
+    #plantButton { background-color: #4caf50; margin-bottom: 10px; }
+    #plantButton:hover { background-color: #388e3c; }
+    #fertilizeButton, #waterButton { font-size: 0.95rem; padding: 8px 14px; }
+    #fertilizeButton { background-color: #2196f3; }
+    #fertilizeButton:hover { background-color: #1769aa; }
+    #waterButton { background-color: #ff9800; }
+    #waterButton:hover { background-color: #c66900; }
+    #light186Button, #light1212Button { font-size: 0.85rem; padding: 5px 10px; }
+    #light186Button { background-color: #7b1fa2; }
+    #light1212Button { background-color: #d32f2f; }
+    .active-phase {
+      box-shadow: 0 0 8px #00000066;
+      border: 2px solid #ffffff;
+      transform: scale(1.03);
+    }
+    .inactive-phase {
+      filter: grayscale(100%) brightness(80%);
+      opacity: 0.6;
+    }
+    .statusWrapper {
+      margin-top: 12px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+      font-weight: bold;
+      font-size: 0.9rem;
+      border-radius: 8px;
+      padding: 8px;
+    }
+    .label { margin-bottom: 4px; }
+    .progressContainer { width: 100%; height: 10px; }
+    .progressBar { height: 100%; width: 100%; }
+    #garden {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+    .plant {
+      width: 135px;
+      padding: 6px;
+      font-size: 0.75rem;
+      background: #fff;
+      border: 2px solid #4caf50;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      text-align: center;
+      position: relative;
+      transition: 0.3s;
+    }
+    .plant.active {
+      border: 2px solid #ff9800;
+      box-shadow: 0 0 6px rgba(255, 152, 0, 0.5);
+    }
+    .plant-name {
+      font-size: 0.9rem;
+      font-weight: bold;
+      margin-bottom: 4px;
+      color: #2c3e50;
+    }
+    .flower-icon { font-size: 30px; margin-bottom: 4px; }
+    .age-phase {
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: #2e7d32;
+      background-color: #e8f5e9;
+      padding: 2px;
+      border-radius: 5px;
+      margin-bottom: 4px;
+    }
+    .age-time, .total-time {
+      font-size: 0.7rem;
+      background: #f1f8e9;
+      padding: 2px;
+      margin-top: 2px;
+      border-radius: 4px;
+      color: #333;
+    }
+    .total-time {
+      background: #fffde7;
+      font-style: italic;
+    }
+    .watering-banner {
+      font-size: 0.65rem;
+      background: #e3f2fd;
+      color: #0d47a1;
+      padding: 3px;
+      border-radius: 5px;
+      margin-top: 4px;
+      border: 1px solid #90caf9;
+    }
+    .delete-button {
+      position: absolute;
+      top: 3px;
+      right: 4px;
+      background: #e53935;
+      border: none;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+      line-height: 18px;
+      cursor: pointer;
+    }
+    .delete-button:hover { background-color: #b71c1c; }
+    #baneryBox { margin-top: 16px; margin-bottom: 16px; }
+    .baner { max-width: 400px; margin: 10px auto; font-weight: bold; }
+    .wateringStatus { background-color: #c8e6c9; color: #2e7d32; }
+    .hnojivoStatus { background-color: #ffcdd2; color: #b71c1c; }
+    .kvetStatus { background-color: #e3f2fd; color: #0d47a1; }
+    .click-animate { animation: clickFlash 0.4s ease; }
+    @keyframes clickFlash {
+      0% { background-color: inherit; transform: scale(1); }
+      50% { background-color: #ffe082; transform: scale(1.07); }
+      100% { background-color: inherit; transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <div class="symbol">🌾</div>
+  <h1>Grow Note</h1>
+  <div id="baneryBox">
+    <div id="wateringWrapper" class="statusWrapper wateringStatus baner" style="display:none;">
+      <div class="label">Zálivka: <span id="wateringTimeLeft">48:00:00</span> zbývá</div>
+      <div class="progressContainer"><div id="wateringProgressBar" class="progressBar" style="background-color:#4caf50;"></div></div>
+    </div>
+    <div id="hnojivoWrapper" class="statusWrapper hnojivoStatus baner" style="display:none;">
+      <div class="label">Hnojiva: <span id="hnojivoTimeLeft">96:00:00</span> zbývá</div>
+      <div class="progressContainer"><div id="hnojivoProgressBar" class="progressBar" style="background-color:#f44336;"></div></div>
+    </div>
+    <div id="kvetWrapper" class="statusWrapper kvetStatus baner" style="display:none;">
+      <div class="label">Konec květu za: <span id="kvetTimeLeft">56:00:00</span></div>
+      <div class="progressContainer"><div id="kvetProgressBar" class="progressBar" style="background-color:#2196f3;"></div></div>
+    </div>
+  </div>
+  <div id="garden"></div>
+  <div style="margin-bottom: 12px;">
+    <button id="plantButton">Zasadit</button>
+  </div>
+  <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 8px;">
+    <button id="light186Button">Světla 18/6 (Růst)</button>
+    <button id="light1212Button">Světla 12/12 (Květ)</button>
+  </div>
+  <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 16px;">
+    <button id="waterButton">Zálivka bez hnojiv</button>
+    <button id="fertilizeButton">Zálivka s hnojivama</button>
+  </div>
+  <!-- Nový banner živého času fáze -->
+  <div id="phaseTimer" style="margin-top: 12px; font-size: 0.9rem; font-weight: bold; color: #444;">
+    Aktivní fáze: <span id="phaseName">---</span><br>
+    Celkový čas ve fázi: <span id="phaseTime">00:00:00</span>
+  </div>
+<script>
+let plants = [];
+let activePlantIndex = null;
+
+const wateringWrapper = document.getElementById('wateringWrapper');
+const hnojivoWrapper = document.getElementById('hnojivoWrapper');
+const kvetWrapper = document.getElementById('kvetWrapper');
+const wateringProgressBar = document.getElementById('wateringProgressBar');
+const hnojivoProgressBar = document.getElementById('hnojivoProgressBar');
+const kvetProgressBar = document.getElementById('kvetProgressBar');
+const wateringTimeLeft = document.getElementById('wateringTimeLeft');
+const hnojivoTimeLeft = document.getElementById('hnojivoTimeLeft');
+const kvetTimeLeft = document.getElementById('kvetTimeLeft');
+const garden = document.getElementById('garden');
+const plantButton = document.getElementById('plantButton');
+const fertilizeButton = document.getElementById('fertilizeButton');
+const waterButton = document.getElementById('waterButton');
+const light186Button = document.getElementById('light186Button');
+const light1212Button = document.getElementById('light1212Button');
+const phaseName = document.getElementById('phaseName');
+const phaseTime = document.getElementById('phaseTime');
+
+function savePlants() {
+  localStorage.setItem('vonkys_herbar_plants', JSON.stringify(plants));
+  localStorage.setItem('active_plant_index', activePlantIndex);
+}
+
+function loadPlants() {
+  const data = JSON.parse(localStorage.getItem('vonkys_herbar_plants') || '[]');
+  const index = parseInt(localStorage.getItem('active_plant_index'));
+  activePlantIndex = isNaN(index) ? null : index;
+  plants = data.map(p => ({
+    ...p,
+    plantedAt: new Date(p.plantedAt),
+    bloomStart: new Date(p.bloomStart),
+    wateringTimer: p.wateringTimer ? new Date(p.wateringTimer) : new Date(),
+    hnojivoTimer: p.hnojivoTimer ? new Date(p.hnojivoTimer) : new Date(),
+    lastWateringAt: p.lastWateringAt ? new Date(p.lastWateringAt) : null,
+    phaseStartTime: p.phaseStartTime ? new Date(p.phaseStartTime) : null,
+    name: p.name || "Bezejmenná"
+  }));
+}
+
+// NOVÁ FUNKCE: převod ms na X dní HH:MM:SS
+function formatTimeWithDays(ms) {
+  ms = Math.max(0, ms);
+  const totalSeconds = Math.floor(ms / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const h = Math.floor((totalSeconds % 86400) / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  return `${days} dní ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function formatTime(ms) {
+  // Ponechávám původní pro staré části – už ho níže nepoužíváme na kvet/phase
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
+
+function updateBaners() {
+  if (activePlantIndex === null || !plants[activePlantIndex]) {
+    wateringWrapper.style.display = 'none';
+    hnojivoWrapper.style.display = 'none';
+    kvetWrapper.style.display = 'none';
+    return;
+  }
+
+  const plant = plants[activePlantIndex];
+  const now = new Date();
+
+  wateringWrapper.style.display = 'block';
+  hnojivoWrapper.style.display = 'block';
+
+  const wateringElapsed = now - plant.wateringTimer;
+  const wateringMax = 48 * 60 * 60 * 1000;
+  const wateringRemaining = Math.max(0, wateringMax - wateringElapsed);
+  wateringTimeLeft.textContent = formatTime(wateringRemaining);
+  wateringProgressBar.style.width = `${(wateringRemaining / wateringMax) * 100}%`;
+
+  const hnojivoElapsed = now - plant.hnojivoTimer;
+  const hnojivoMax = 96 * 60 * 60 * 1000;
+  const hnojivoRemaining = Math.max(0, hnojivoMax - hnojivoElapsed);
+  hnojivoTimeLeft.textContent = formatTime(hnojivoRemaining);
+  hnojivoProgressBar.style.width = `${(hnojivoRemaining / hnojivoMax) * 100}%`;
+
+  // KONEC KVĚTU: VÝSTUP VE FORMÁTU "X dní HH:MM:SS"
+  const bloomMax = 56 * 24 * 60 * 60 * 1000;
+  let bloomElapsed = plant.phaseDurations?.bloom || 0;
+  if (plant.activePhase === 'bloom' && plant.phaseStartTime) {
+    bloomElapsed += now - plant.phaseStartTime;
+  }
+
+  const bloomRemaining = Math.max(0, bloomMax - bloomElapsed);
+  if (bloomElapsed > 0) {
+    kvetWrapper.style.display = 'block';
+    kvetTimeLeft.textContent = formatTimeWithDays(bloomRemaining);
+    kvetProgressBar.style.width = `${(bloomRemaining / bloomMax) * 100}%`;
+  } else {
+    kvetWrapper.style.display = 'none';
+  }
+}
+
+function updatePhaseTimer() {
+  if (activePlantIndex === null || !plants[activePlantIndex]) {
+    phaseName.textContent = '---';
+    phaseTime.textContent = '0 dní 00:00:00';
+    return;
+  }
+
+  const plant = plants[activePlantIndex];
+  const now = new Date();
+  let elapsed = 0;
+
+  if (plant.activePhase === 'growth') {
+    phaseName.textContent = 'Růst';
+    elapsed = (plant.phaseDurations?.growth || 0) + (plant.phaseStartTime ? now - plant.phaseStartTime : 0);
+  } else if (plant.activePhase === 'bloom') {
+    phaseName.textContent = 'Květ';
+    elapsed = (plant.phaseDurations?.bloom || 0) + (plant.phaseStartTime ? now - plant.phaseStartTime : 0);
+  } else {
+    phaseName.textContent = '---';
+    elapsed = 0;
+  }
+
+  phaseTime.textContent = formatTimeWithDays(elapsed);
+}
+
+function updatePhaseButtons() {
+  light186Button.classList.remove('active-phase', 'inactive-phase');
+  light1212Button.classList.remove('active-phase', 'inactive-phase');
+
+  if (activePlantIndex === null) {
+    light186Button.classList.add('inactive-phase');
+    light1212Button.classList.add('inactive-phase');
+    return;
+  }
+
+  const plant = plants[activePlantIndex];
+  if (plant.activePhase === 'growth') {
+    light186Button.classList.add('active-phase');
+    light1212Button.classList.add('inactive-phase');
+  } else if (plant.activePhase === 'bloom') {
+    light1212Button.classList.add('active-phase');
+    light186Button.classList.add('inactive-phase');
+  } else {
+    light186Button.classList.add('inactive-phase');
+    light1212Button.classList.add('inactive-phase');
+  }
+}
+
+function renderPlants() {
+  garden.innerHTML = '';
+  const now = new Date();
+
+  plants.forEach((p, idx) => {
+    let growthTime = p.phaseDurations?.growth || 0;
+    let bloomTime = p.phaseDurations?.bloom || 0;
+    if (idx === activePlantIndex && p.activePhase && p.phaseStartTime) {
+      const elapsed = now - p.phaseStartTime;
+      if (p.activePhase === 'growth') growthTime += elapsed;
+      if (p.activePhase === 'bloom') bloomTime += elapsed;
+    }
+
+    const totalTime = now - p.plantedAt;
+    const phase = p.activePhase === 'bloom' ? 'Květ' : 'Růst';
+
+    const div = document.createElement('div');
+    div.className = 'plant';
+    if (idx === activePlantIndex) div.classList.add('active');
+    div.innerHTML = `
+      <button class="delete-button" title="Smazat kytičku">&times;</button>
+      <div class="plant-name">${p.name}</div>
+      <div class="flower-icon">🪴</div>
+      <div class="age-phase">Fáze: ${phase}</div>
+      <div class="age-time">Doba růstu: ${(growthTime / 86400000).toFixed(1)} dní</div>
+      <div class="age-time">Doba květu: ${(bloomTime / 86400000).toFixed(1)} dní</div>
+      <div class="total-time">Celkem od zasazení: ${(totalTime / 86400000).toFixed(1)} dní</div>
+      <div class="watering-banner">${
+        p.lastWateringAt
+          ? `Zalito ${p.lastWateringType === 'fertilize' ? 's hnojivem' : 'bez hnojiva'} před ${(now - p.lastWateringAt) / 3600000 | 0} h`
+          : 'Zalévání nebylo zaznamenáno'
+      }</div>`;
+
+    div.querySelector('.delete-button').onclick = (e) => {
+      e.stopPropagation();
+      plants.splice(idx, 1);
+      if (plants.length === 0) {
+        activePlantIndex = null;
+      } else if (activePlantIndex === idx) {
+        activePlantIndex = 0;
+      } else if (activePlantIndex > idx) {
+        activePlantIndex--;
+      }
+      savePlants();
+      renderPlants();
+      updatePhaseButtons();
+      updateBaners();
+    };
+
+    div.onclick = () => {
+      activePlantIndex = idx;
+      savePlants();
+      renderPlants();
+      updatePhaseButtons();
+      updateBaners();
+    };
+
+    garden.appendChild(div);
+  });
+}
+
+function parseDate(str) {
+  const parts = str.split('/');
+  if (parts.length !== 3) return null;
+  const [d, m, y] = parts.map(Number);
+  return new Date(y, m - 1, d);
+}
+
+plantButton.onclick = () => {
+  const name = prompt('Zadej název rostliny:');
+  const zasazeniStr = prompt('Zadej datum zasazení (dd/mm/rrrr):');
+  const kvetStr = prompt('Zadej datum přepnutí na květ (dd/mm/rrrr), nebo nech prázdné:');
+  const zasazeni = parseDate(zasazeniStr);
+  const kvet = kvetStr ? parseDate(kvetStr) : null;
+  const now = new Date();
+  if (!zasazeni || zasazeni > now) return alert('Neplatné datum zasazení.');
+  if (kvet && kvet < zasazeni) return alert('Datum květu nemůže být před zasazením.');
+  const growthTime = kvet ? kvet - zasazeni : now - zasazeni;
+  const bloomTime = kvet && kvet <= now ? now - kvet : 0;
+  const newPlant = {
+    name: name || "Bezejmenná",
+    plantedAt: zasazeni,
+    bloomStart: kvet || zasazeni,
+    wateringTimer: now,
+    hnojivoTimer: now,
+    lastWateringAt: null,
+    lastWateringType: null,
+    activePhase: null,
+    phaseStartTime: null,
+    phaseDurations: { growth: growthTime, bloom: bloomTime }
+  };
+  plants.push(newPlant);
+  activePlantIndex = plants.length - 1;
+  savePlants();
+  renderPlants();
+  updatePhaseButtons();
+  updateBaners();
+};
+
+fertilizeButton.onclick = () => {
+  if (activePlantIndex === null) return alert('Vyber rostlinu.');
+  fertilizeButton.classList.add('click-animate');
+  setTimeout(() => fertilizeButton.classList.remove('click-animate'), 400);
+  const now = new Date();
+  const p = plants[activePlantIndex];
+  p.lastWateringAt = now;
+  p.lastWateringType = 'fertilize';
+  p.wateringTimer = now;
+  p.hnojivoTimer = now;
+  savePlants();
+  renderPlants();
+  updateBaners();
+};
+
+waterButton.onclick = () => {
+  if (activePlantIndex === null) return alert('Vyber rostlinu.');
+  waterButton.classList.add('click-animate');
+  setTimeout(() => waterButton.classList.remove('click-animate'), 400);
+  const now = new Date();
+  const p = plants[activePlantIndex];
+  p.lastWateringAt = now;
+  p.lastWateringType = 'water';
+  p.wateringTimer = now;
+  savePlants();
+  renderPlants();
+  updateBaners();
+};
+
+light186Button.onclick = () => {
+  if (activePlantIndex === null) return alert('Vyber rostlinu.');
+  const now = new Date();
+  const p = plants[activePlantIndex];
+  if (p.activePhase && p.phaseStartTime) {
+    const elapsed = now - p.phaseStartTime;
+    if (!p.phaseDurations) p.phaseDurations = { growth: 0, bloom: 0 };
+    if (p.activePhase === 'growth') p.phaseDurations.growth += elapsed;
+    if (p.activePhase === 'bloom') p.phaseDurations.bloom += elapsed;
+  }
+  p.activePhase = 'growth';
+  p.phaseStartTime = now;
+  savePlants();
+  renderPlants();
+  updatePhaseButtons();
+};
+
+light1212Button.onclick = () => {
+  if (activePlantIndex === null) return alert('Vyber rostlinu.');
+  const now = new Date();
+  const p = plants[activePlantIndex];
+  if (p.activePhase && p.phaseStartTime) {
+    const elapsed = now - p.phaseStartTime;
+    if (!p.phaseDurations) p.phaseDurations = { growth: 0, bloom: 0 };
+    if (p.activePhase === 'growth') p.phaseDurations.growth += elapsed;
+    if (p.activePhase === 'bloom') p.phaseDurations.bloom += elapsed;
+  }
+  p.activePhase = 'bloom';
+  p.phaseStartTime = now;
+  savePlants();
+  renderPlants();
+  updatePhaseButtons();
+};
+
+loadPlants();
+renderPlants();
+updatePhaseButtons();
+updateBaners();
+updatePhaseTimer();
+setInterval(updateBaners, 1000);
+setInterval(updatePhaseTimer, 1000);
+</script>
+</body>
+</html>
